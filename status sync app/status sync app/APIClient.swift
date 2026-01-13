@@ -183,7 +183,7 @@ class APIClient {
         _ = try await self.request(request, responseType: APIResponse<Bool>.self)
     }
     
-    func getPeerPresence(requesterUserId: String, targetUserId: String, capabilityToken: String) async throws -> PresenceGetResponse.PresenceData? {
+    func getPeerPresence(requesterUserId: String, targetUserId: String, capabilityToken: String?) async throws -> PresenceGetResponse.PresenceData? {
         guard let url = url(path: "/presence/get") else {
             throw APIError.invalidURL
         }
@@ -192,11 +192,13 @@ class APIClient {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: String] = [
+        var body: [String: Any] = [
             "requester_user_id": requesterUserId,
-            "target_user_id": targetUserId,
-            "capability_token": capabilityToken
+            "target_user_id": targetUserId
         ]
+        if let token = capabilityToken {
+            body["capability_token"] = token
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
         let response = try await self.request(request, responseType: PresenceGetResponse.self)

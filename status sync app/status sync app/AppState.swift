@@ -83,14 +83,18 @@ class AppState: ObservableObject {
     }
     
     private func updateMyPresence() async {
+        let currentState = presenceMonitor.currentState
+        print("DEBUG: updateMyPresence CALLED user_id=\(settings.myUserId) state=\(currentState.rawValue)")
         do {
             try await apiClient.updatePresence(
                 userId: settings.myUserId,
-                state: presenceMonitor.currentState
+                state: currentState
             )
+            print("DEBUG: updateMyPresence SUCCESS user_id=\(settings.myUserId) state=\(currentState.rawValue)")
             lastOnlineSuccess = Date()
             isOnline = true
         } catch {
+            print("DEBUG: updateMyPresence ERROR user_id=\(settings.myUserId) state=\(currentState.rawValue) error=\(error)")
             if let last = lastOnlineSuccess {
                 let cutoff = last.addingTimeInterval(TimeInterval(settings.pollIntervalSeconds * 2))
                 if Date() > cutoff {
@@ -134,10 +138,9 @@ class AppState: ObservableObject {
             print("DEBUG: pollInbox error fetching tokens: \(error)")
         }
         
-        // Poll peer presence for peers with tokens
+        // Poll peer presence for all peers (token optional - knowing user_id is approval)
         for peer in settings.peers {
-            guard let token = peer.capabilityToken else { continue }
-            await pollPeerPresence(peer: peer, token: token)
+            await pollPeerPresence(peer: peer, token: peer.capabilityToken)
         }
         
         // Poll peer profiles for all contacts
@@ -146,7 +149,7 @@ class AppState: ObservableObject {
         }
     }
     
-    private func pollPeerPresence(peer: Peer, token: String) async {
+    private func pollPeerPresence(peer: Peer, token: String?) async {
         do {
             if let presence = try await apiClient.getPeerPresence(
                 requesterUserId: settings.myUserId,

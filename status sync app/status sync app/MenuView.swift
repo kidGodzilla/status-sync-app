@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import Combine
 
 @ViewBuilder
 func avatarView(text: String, avatarData: Data? = nil, size: CGFloat = 24) -> some View {
@@ -196,12 +197,17 @@ struct PeerRow: View {
     @State private var showActions = false
     
     private func formatTimestamp(_ timestamp: Int64) -> String {
+        // Important: this UI is not re-rendered every second (poll interval is ~30s),
+        // so we intentionally avoid displaying second-level granularity like "2s ago".
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        let delta = max(0, Int(Date().timeIntervalSince(date)))
+
+        if delta < 60 { return "<1m ago" }
+        if delta < 3600 { return "\(delta / 60)m ago" }
+        if delta < 86400 { return "\(delta / 3600)h ago" }
+        return "\(delta / 86400)d ago"
     }
-    
+
     private func formatLocalTime(_ timestamp: Int64) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()
@@ -209,6 +215,46 @@ struct PeerRow: View {
         formatter.timeStyle = .short
         formatter.timeZone = TimeZone.current
         return formatter.string(from: date)
+    }
+
+    // Helper to bridge NSMenuItem actions to Swift closures.
+    final class MenuActionHandler: NSObject {
+        private let action: () -> Void
+        init(_ action: @escaping () -> Void) { self.action = action }
+        @objc func performAction(_ sender: Any?) { action() }
+    }
+
+    private func showContactMenu() {
+        let menu = NSMenu()
+
+        var handlers: [MenuActionHandler] = []
+        func addItem(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) {
+            let item = NSMenuItem(title: title, action: #selector(MenuActionHandler.performAction(_:)), keyEquivalent: "")
+            let h = MenuActionHandler(action)
+            item.target = h
+            if let systemImage, let img = NSImage(systemSymbolName: systemImage, accessibilityDescription: nil) {
+                item.image = img
+            }
+            handlers.append(h)
+            menu.addItem(item)
+        }
+
+        addItem("Message", systemImage: "message") { openMessage(handle: peer.handle) }
+        addItem("FaceTime", systemImage: "video") { openFaceTime(handle: peer.handle) }
+        addItem("FaceTime Audio", systemImage: "phone") { openFaceTimeAudio(handle: peer.handle) }
+        menu.addItem(.separator())
+        addItem("Edit Contact", systemImage: "pencil") {
+            NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+            EditContactWindowController.shared.present(appState: appState, peer: peer)
+        }
+        menu.addItem(.separator())
+        addItem("Remove", systemImage: "trash") { appState.removePeer(peer.peerUserId) }
+
+        // Keep handlers alive for the duration of the menu.
+        objc_setAssociatedObject(menu, Unmanaged.passUnretained(menu).toOpaque(), handlers, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+        let p = NSEvent.mouseLocation
+        menu.popUp(positioning: nil, at: p, in: nil)
     }
     
     private var displayLabel: String {
@@ -238,82 +284,44 @@ struct PeerRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 avatarView(text: displayLabel, avatarData: peer.avatarData)
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(displayLabel)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                    
-                    Text(subtitleLabel)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    
+
                     if let presence = peer.lastKnownPresence {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 4) {
-                                Circle()
-                                    .fill(statusColor(for: presence.state))
-                                    .frame(width: 6, height: 6)
-                                Text(presence.state.rawValue.capitalized)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            Text(formatTimestamp(presence.timestamp))
-                                .font(.caption2)
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(statusColor(for: presence.state))
+                                .frame(width: 6, height: 6)
+                            Text("\(presence.state.rawValue.capitalized) • \(formatTimestamp(presence.timestamp))")
+                                .font(.caption)
                                 .foregroundColor(.secondary)
-                                .help(formatLocalTime(presence.timestamp))
                         }
                     } else {
-                        Text(peer.capabilityToken == nil ? "Pending approval" : "Unknown")
+                        Text("Unknown")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
-                
+
                 Spacer()
-                
-                Menu {
-                    Button(action: {
-                        openMessage(handle: peer.handle)
-                    }) {
-                        Label("Message", systemImage: "message")
-                    }
-                    
-                    Button(action: {
-                        openFaceTime(handle: peer.handle)
-                    }) {
-                        Label("FaceTime", systemImage: "video")
-                    }
-                    
-                    Button(action: {
-                        openFaceTimeAudio(handle: peer.handle)
-                    }) {
-                        Label("FaceTime Audio", systemImage: "phone")
-                    }
-                    
-                    Button(action: {
-                        NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
-                        EditContactWindowController.shared.present(appState: appState, peer: peer)
-                    }) {
-                        Label("Edit Contact", systemImage: "pencil")
-                    }
-                    
-                    Divider()
-                    
-                    Button(role: .destructive, action: {
-                        appState.removePeer(peer.peerUserId)
-                    }) {
-                        Label("Remove", systemImage: "trash")
-                    }
-                } label: {
+
+                // Affordance stays visible; clicking it opens the same menu as clicking the row.
+                Button(action: { showContactMenu() }) {
                     Image(systemName: "ellipsis.circle")
                         .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
         }
+        .contentShape(Rectangle())
+        .onTapGesture { showContactMenu() }
+        .help(peer.lastKnownPresence != nil ? "Local time: \(formatLocalTime(peer.lastKnownPresence!.timestamp))" : "")
     }
     
     private func statusColor(for state: PresenceState) -> Color {

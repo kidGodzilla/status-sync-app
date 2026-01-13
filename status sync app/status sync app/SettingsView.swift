@@ -33,23 +33,6 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Group {
-                    Text("Server")
-                        .font(.headline)
-                    TextField("Server Base URL", text: $serverURL)
-                }
-                
-                Group {
-                    Text("Presence")
-                        .font(.headline)
-                    Stepper(value: $thresholdSeconds, in: 30...600, step: 30) {
-                        Text("Presence Threshold: \(thresholdSeconds) seconds")
-                    }
-                    Stepper(value: $pollIntervalSeconds, in: 10...60, step: 10) {
-                        Text("Poll Interval: \(pollIntervalSeconds) seconds")
-                    }
-                }
-                
-                Group {
                     Text("Your Info")
                         .font(.headline)
                     TextField("Your display name", text: $myDisplayName)
@@ -65,6 +48,23 @@ struct SettingsView: View {
                                 .controlSize(.small)
                                 .disabled(myAvatarData == nil)
                         }
+                    }
+                }
+
+                Group {
+                    Text("Server")
+                        .font(.headline)
+                    TextField("Server Base URL", text: $serverURL)
+                }
+                
+                Group {
+                    Text("Presence")
+                        .font(.headline)
+                    Stepper(value: $thresholdSeconds, in: 30...600, step: 30) {
+                        Text("Presence Threshold: \(thresholdSeconds) seconds")
+                    }
+                    Stepper(value: $pollIntervalSeconds, in: 10...60, step: 10) {
+                        Text("Poll Interval: \(pollIntervalSeconds) seconds")
                     }
                 }
                 
@@ -129,12 +129,12 @@ struct SettingsView: View {
             Image(nsImage: nsImage)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 48, height: 48)
+                .frame(width: 32, height: 32)
                 .clipShape(Circle())
         } else {
             Text("👤")
-                .font(.title2)
-                .frame(width: 48, height: 48)
+                .font(.body)
+                .frame(width: 32, height: 32)
                 .background(Circle().fill(Color.secondary.opacity(0.2)))
         }
     }
