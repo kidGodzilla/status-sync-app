@@ -12,6 +12,7 @@
  *   CORS_ORIGIN=https://your-app-origin (optional)
  */
 
+require('dotenv').config();
 const express = require("express");
 const crypto = require("crypto");
 
