@@ -77,8 +77,8 @@ Menu should include:
 - Divider
 - Section: Peer list (v1 allow 1 peer, but implement data model to allow many)
   - Peer display name (from contacts or manual)
-  - Peer presence (unknown/active/away/asleep + last updated time)
-  - Buttons: "Message", "FaceTime", "FaceTime Audio"
+  - Peer presence (unknown/active/away/asleep + relative last updated time)
+  - Buttons: "Message", "FaceTime", "FaceTime Audio" (via menu)
 - Divider
 - Section: Incoming requests (if any)
   - For each request: show from_user_id and Allow/Deny buttons
@@ -93,16 +93,15 @@ Menu should include:
 
 ## Contacts Permission & Peer Creation
 When user clicks "Add Peer":
-- Show CNContactPickerViewController to pick a person.
-- Extract:
-  - display name
-  - one preferred handle (choose email first; if none, phone).
-- Then ask user to paste the peer's user_id (required for protocol).
+- User manually enters display name and handle (email or phone number).
+- Then user pastes the peer's user_id (required for protocol).
 - Save Peer record:
   - peer_user_id (string; protocol identity)
-  - display_name (string; from contact)
+  - display_name (string; user-entered)
   - handle (string; for iMessage/FaceTime deep links)
   - capability_token (nullable string)
+
+Note: CNContactPickerViewController is not available on macOS, so manual entry is used.
 
 Important:
 - Contacts are used only to pick a friendly name/handle.
@@ -110,11 +109,13 @@ Important:
 - Do not upload contacts to server.
 
 ## Local Storage
-Persist locally using UserDefaults (Codable) or a JSON file:
+Persist locally using UserDefaults with Codable:
 - my_user_id
 - server_base_url
 - peers array (including capability tokens)
-- any preferences
+- presence threshold seconds
+- poll interval seconds
+- All data persists across app restarts
 
 ## Network Layer Requirements
 - Use URLSession
@@ -130,9 +131,10 @@ Persist locally using UserDefaults (Codable) or a JSON file:
 - If server is unreachable: show "offline" in UI but do not spam alerts.
 
 ## Presence Monitor Requirements
-- Use CGEventSource.secondsSinceLastEventType(.combinedSessionState) for idle time.
+- Use CGEventSource API to detect system idle time (exact API signature may vary by macOS version).
 - Determine "active/away" from idle time.
 - Update published state on a timer.
+- Use HID system state to detect keyboard/mouse activity.
 
 ## iMessage / FaceTime Launch
 - iMessage: sms:<handle>
