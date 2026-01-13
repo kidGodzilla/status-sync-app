@@ -170,6 +170,11 @@ function pushTokenToInbox(userId, item) {
 
 // ----- Routes -----
 
+app.get("/", (req, res) => {
+  res.type("text/plain");
+  res.send("Status Sync API - Nothing to see here");
+});
+
 app.get("/health", (req, res) => {
   res.json({ ok: true, ts: nowMs() });
 });
