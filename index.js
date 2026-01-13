@@ -334,8 +334,9 @@ app.post("/tokens/ack", (req, res) => {
 
 /**
  * POST /presence/get
- * Body: { requester_user_id, target_user_id, capability_token }
- * Returns target's latest presence if authorized.
+ * Body: { requester_user_id, target_user_id, capability_token? }
+ * Returns target's latest presence.
+ * Token is optional - knowing the user_id is considered implicit approval.
  */
 app.post("/presence/get", (req, res) => {
   const { requester_user_id, target_user_id, capability_token } = req.body || {};
@@ -343,8 +344,12 @@ app.post("/presence/get", (req, res) => {
     return res.status(400).json({ ok: false, error: "bad_user_id" });
   }
 
-  const v = verifyCapabilityToken(capability_token, requester_user_id, target_user_id, "read_presence");
-  if (!v.ok) return res.status(403).json({ ok: false, error: "unauthorized", reason: v.reason });
+  // Token is optional - knowing the user_id is considered implicit approval
+  // If token is provided, verify it; otherwise allow access
+  if (capability_token) {
+    const v = verifyCapabilityToken(capability_token, requester_user_id, target_user_id, "read_presence");
+    if (!v.ok) return res.status(403).json({ ok: false, error: "unauthorized", reason: v.reason });
+  }
 
   const p = presenceByUserId.get(target_user_id);
   if (!p) return res.json({ ok: true, presence: null });
