@@ -114,6 +114,7 @@ class AppState: ObservableObject {
         // Poll tokens
         do {
             let tokens = try await apiClient.getTokensInbox(userId: settings.myUserId)
+            print("DEBUG: pollInbox got \(tokens.count) tokens")
             for token in tokens {
                 // Find peer by 'from' user_id and update capability token
                 if let index = settings.peers.firstIndex(where: { $0.peerUserId == token.from }) {
@@ -121,13 +122,16 @@ class AppState: ObservableObject {
                     peer.capabilityToken = token.token
                     storage.updatePeer(peer)
                     settings.peers[index] = peer
+                    print("DEBUG: pollInbox updated capability token for peer_id=\(token.from)")
                     
                     // Acknowledge token
                     try? await apiClient.ackToken(userId: settings.myUserId, token: token.token)
+                } else {
+                    print("DEBUG: pollInbox got token for unknown peer_id=\(token.from)")
                 }
             }
         } catch {
-            // Quiet error handling
+            print("DEBUG: pollInbox error fetching tokens: \(error)")
         }
         
         // Poll peer presence for peers with tokens
@@ -158,10 +162,13 @@ class AppState: ObservableObject {
                     )
                     storage.updatePeer(updatedPeer)
                     settings.peers[index] = updatedPeer
+                    print("DEBUG: pollPeerPresence success peer_id=\(peer.peerUserId) state=\(presence.state)")
                 }
+            } else {
+                print("DEBUG: pollPeerPresence returned nil for peer_id=\(peer.peerUserId)")
             }
         } catch {
-            // Quiet error handling
+            print("DEBUG: pollPeerPresence error peer_id=\(peer.peerUserId) error=\(error)")
         }
     }
     
