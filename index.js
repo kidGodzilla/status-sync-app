@@ -7,7 +7,7 @@
  * - Transport: polling over HTTPS recommended; server itself is plain HTTP (put behind TLS proxy)
  *
  * ENV:
- *   PORT=8787
+ *   PORT=5000
  *   SERVER_SECRET=some-long-random-string
  *   CORS_ORIGIN=https://your-app-origin (optional)
  */
@@ -19,7 +19,7 @@ const app = express();
 app.use(express.json({ limit: "64kb" }));
 
 // ----- Config -----
-const PORT = Number(process.env.PORT || 8787);
+const PORT = Number(process.env.PORT || 5000);
 const SERVER_SECRET = process.env.SERVER_SECRET || null;
 if (!SERVER_SECRET) {
   console.error("Missing SERVER_SECRET env var. Refusing to start.");
