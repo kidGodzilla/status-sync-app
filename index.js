@@ -63,6 +63,13 @@ const requestsByToUserId = new Map();
  */
 const tokensInboxByUserId = new Map();
 
+/**
+ * profilesByUserId: Map<user_id, { displayName, handle, avatarData, updatedAt }>
+ * - Stores user profile info (display name, handle, avatar)
+ * - updatedAt is server receipt time (ms)
+ */
+const profilesByUserId = new Map();
+
 // ----- Helpers -----
 function nowMs() {
   return Date.now();
@@ -351,6 +358,50 @@ app.post("/presence/get", (req, res) => {
       state: p.state,
       device: p.device,
       timestamp: p.timestamp
+    }
+  });
+});
+
+/**
+ * POST /profile/update
+ * Body: { user_id, displayName, handle, avatarData? (base64) }
+ * Updates the user's profile info.
+ */
+app.post("/profile/update", (req, res) => {
+  const { user_id, displayName, handle, avatarData } = req.body || {};
+  if (!isValidUserId(user_id)) return res.status(400).json({ ok: false, error: "bad_user_id" });
+  if (typeof displayName !== "string" || typeof handle !== "string") {
+    return res.status(400).json({ ok: false, error: "bad_profile_data" });
+  }
+
+  profilesByUserId.set(user_id, {
+    displayName: displayName.trim(),
+    handle: handle.trim(),
+    avatarData: typeof avatarData === "string" ? avatarData : null,
+    updatedAt: nowMs()
+  });
+
+  res.json({ ok: true });
+});
+
+/**
+ * GET /profile/get?user_id=...
+ * Returns profile info for a user (public, no auth required).
+ */
+app.get("/profile/get", (req, res) => {
+  const user_id = req.query.user_id;
+  if (!isValidUserId(user_id)) return res.status(400).json({ ok: false, error: "bad_user_id" });
+
+  const profile = profilesByUserId.get(user_id);
+  if (!profile) return res.json({ ok: true, profile: null });
+
+  res.json({
+    ok: true,
+    profile: {
+      user_id,
+      displayName: profile.displayName,
+      handle: profile.handle,
+      avatarData: profile.avatarData
     }
   });
 });
