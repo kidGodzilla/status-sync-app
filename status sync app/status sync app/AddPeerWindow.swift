@@ -44,5 +44,6 @@ final class AddPeerWindowController {
         
         self.window = panel
         panel.makeKeyAndOrderFront(nil)
+        panel.makeFirstResponder(panel.contentView)
     }
 }

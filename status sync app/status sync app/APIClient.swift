@@ -222,6 +222,7 @@ class APIClient {
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
+        print("DEBUG: updateProfile POST \(url.absoluteString) user_id=\(userId) displayName=\(displayName) handle=\(handle)")
         _ = try await self.request(request, responseType: APIResponse<Bool>.self)
     }
     
@@ -233,6 +234,7 @@ class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
+        print("DEBUG: getProfile GET \(url.absoluteString)")
         let response = try await self.request(request, responseType: ProfileGetResponse.self)
         return response.profile
     }

@@ -95,6 +95,7 @@ struct SettingsView: View {
                     appState.updateSettings()
                     
                     // Sync profile to server
+                    print("DEBUG: SettingsView Save button clicked, calling syncMyProfileToServer")
                     appState.syncMyProfileToServer()
                     
                     saveFeedback = "Saved"

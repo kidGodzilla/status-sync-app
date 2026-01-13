@@ -31,23 +31,28 @@ struct AddPeerView: View {
                 TextField("User ID", text: $peerUserId)
                     .focused($focusedField, equals: .userId)
                 
+            }
+            
+            HStack {
+                Spacer()
+                Button("Cancel") {
+                    onDone?()
+                }
+                .buttonStyle(.plain)
+                
                 Button("Add") {
                     addPeer()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(peerUserId.isEmpty)
-                .frame(maxWidth: .infinity)
             }
-            
-            Button("Cancel") {
-                onDone?()
-            }
-            .buttonStyle(.plain)
         }
         .padding(20)
         .frame(width: 280)
         .onAppear {
-            focusedField = .userId
+            DispatchQueue.main.async {
+                focusedField = .userId
+            }
         }
     }
     

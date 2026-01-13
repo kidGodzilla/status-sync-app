@@ -66,6 +66,17 @@ class AppState: ObservableObject {
         Task {
             await updateMyPresence()
             await pollInbox()
+            
+            // Sync profile to server on startup (if profile is set up)
+            if !settings.myDisplayName.isEmpty || !settings.myHandle.isEmpty {
+                syncMyProfileToServer()
+            }
+        }
+        
+        // Sync profile periodically (every 5 minutes) to keep server updated
+        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+            guard let self = self, !self.settings.myDisplayName.isEmpty || !self.settings.myHandle.isEmpty else { return }
+            self.syncMyProfileToServer()
         }
     }
     
@@ -182,6 +193,7 @@ class AppState: ObservableObject {
         
         // Fetch profile from server
         Task {
+            print("DEBUG: fetchPeerProfile start peer_id=\(peer.peerUserId)")
             await fetchPeerProfile(peerUserId: peer.peerUserId)
             // Create request to peer
             await createRequest(toUserId: peer.peerUserId)
@@ -201,24 +213,32 @@ class AppState: ObservableObject {
                     }
                     storage.updatePeer(updatedPeer)
                     settings.peers[index] = updatedPeer
+                    print("DEBUG: fetchPeerProfile success peer_id=\(peerUserId) displayName=\(updatedPeer.displayName) handle=\(updatedPeer.handle)")
+                } else {
+                    print("DEBUG: fetchPeerProfile received profile but peer not found locally peer_id=\(peerUserId)")
                 }
+            } else {
+                print("DEBUG: fetchPeerProfile returned nil profile peer_id=\(peerUserId)")
             }
         } catch {
-            // Quiet error handling
+            print("DEBUG: fetchPeerProfile error peer_id=\(peerUserId) error=\(error)")
         }
     }
     
     func syncMyProfileToServer() {
+        print("DEBUG: syncMyProfileToServer CALLED user_id=\(settings.myUserId) displayName='\(settings.myDisplayName)' handle='\(settings.myHandle)'")
         Task {
             do {
+                print("DEBUG: syncMyProfileToServer starting API call...")
                 try await apiClient.updateProfile(
                     userId: settings.myUserId,
                     displayName: settings.myDisplayName,
                     handle: settings.myHandle,
                     avatarData: settings.myAvatarData
                 )
+                print("DEBUG: syncMyProfileToServer SUCCESS user_id=\(settings.myUserId) displayName='\(settings.myDisplayName)' handle='\(settings.myHandle)'")
             } catch {
-                // Quiet error handling
+                print("DEBUG: syncMyProfileToServer ERROR user_id=\(settings.myUserId) error=\(error)")
             }
         }
     }
