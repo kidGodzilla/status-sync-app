@@ -75,8 +75,10 @@ class AppState: ObservableObject {
         
         // Sync profile periodically (every 5 minutes) to keep server updated
         Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            guard let self = self, !self.settings.myDisplayName.isEmpty || !self.settings.myHandle.isEmpty else { return }
-            self.syncMyProfileToServer()
+            Task { @MainActor in
+                guard let self = self, !self.settings.myDisplayName.isEmpty || !self.settings.myHandle.isEmpty else { return }
+                self.syncMyProfileToServer()
+            }
         }
     }
     
