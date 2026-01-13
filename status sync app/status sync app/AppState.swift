@@ -75,7 +75,7 @@ class AppState: ObservableObject {
         
         // Sync profile periodically (every 5 minutes) to keep server updated
         Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self = self, !self.settings.myDisplayName.isEmpty || !self.settings.myHandle.isEmpty else { return }
                 self.syncMyProfileToServer()
             }
@@ -239,11 +239,20 @@ class AppState: ObservableObject {
         Task {
             do {
                 print("DEBUG: syncMyProfileToServer starting API call...")
+                // Compress avatar if present (safety measure)
+                var compressedAvatar: Data? = nil
+                if let avatarData = settings.myAvatarData {
+                    compressedAvatar = compressAvatar(avatarData) ?? avatarData
+                    if let compressed = compressedAvatar {
+                        let sizeKB = compressed.count / 1024
+                        print("DEBUG: syncMyProfileToServer avatar size: \(sizeKB)KB")
+                    }
+                }
                 try await apiClient.updateProfile(
                     userId: settings.myUserId,
                     displayName: settings.myDisplayName,
                     handle: settings.myHandle,
-                    avatarData: settings.myAvatarData
+                    avatarData: compressedAvatar
                 )
                 print("DEBUG: syncMyProfileToServer SUCCESS user_id=\(settings.myUserId) displayName='\(settings.myDisplayName)' handle='\(settings.myHandle)'")
             } catch {
