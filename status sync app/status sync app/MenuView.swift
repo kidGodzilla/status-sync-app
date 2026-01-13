@@ -295,7 +295,7 @@ struct PeerRow: View {
                             Circle()
                                 .fill(statusColor(for: presence.state))
                                 .frame(width: 6, height: 6)
-                            Text("\(presence.state.rawValue.capitalized) • \(formatTimestamp(presence.timestamp))")
+                            Text("\(presence.state.rawValue.capitalized) \(formatTimestamp(presence.timestamp))")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
