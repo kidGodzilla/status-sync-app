@@ -110,9 +110,16 @@ struct SettingsView: View {
             .padding(20)
         }
         .frame(minWidth: 500, minHeight: 500)
-        .background(WindowAccessor { window in
-            window?.title = "Settings"
-        })
+        .onAppear {
+            DispatchQueue.main.async {
+                // Set window title to "Settings"
+                NSApplication.shared.windows.forEach { window in
+                    if window.isVisible && (window.title.contains("Preferences") || window.title.contains("Settings")) {
+                        window.title = "Settings"
+                    }
+                }
+            }
+        }
     }
     
     @ViewBuilder
