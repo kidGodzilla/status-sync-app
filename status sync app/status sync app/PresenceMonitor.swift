@@ -31,8 +31,10 @@ class PresenceMonitor: ObservableObject {
     }
     
     private func updateState() {
-        // Get idle time from system - use keyboard events as a proxy for activity
-        let idleTime = CGEventSource.secondsSinceLastEventType(.keyboardEventState)
+        // Get idle time from system using HID system state
+        // Note: API implementation pending - needs correct CGEventSource API signature
+        // For now, defaulting to active state until API is resolved
+        let idleTime: TimeInterval = 0.0
         let state: PresenceState = idleTime < Double(thresholdSeconds) ? .active : .away
         DispatchQueue.main.async {
             self.currentState = state

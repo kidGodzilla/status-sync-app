@@ -24,8 +24,10 @@ class AppState: ObservableObject {
     init(storage: StorageManager) {
         self.storage = storage
         self.settings = storage.settings
-        self.apiClient = APIClient(baseURL: settings.serverBaseURL)
-        self.presenceMonitor = PresenceMonitor(thresholdSeconds: settings.presenceThresholdSeconds)
+        let serverURL = storage.settings.serverBaseURL
+        let threshold = storage.settings.presenceThresholdSeconds
+        self.apiClient = APIClient(baseURL: serverURL)
+        self.presenceMonitor = PresenceMonitor(thresholdSeconds: threshold)
         
         startTimers()
     }
