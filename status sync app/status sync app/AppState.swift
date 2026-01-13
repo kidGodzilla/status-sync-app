@@ -15,11 +15,16 @@ class AppState: ObservableObject {
     @Published var incomingRequests: [PresenceRequest] = []
     @Published var isOnline: Bool = true
     
+    var profileNeedsSetup: Bool {
+        settings.myDisplayName.isEmpty || settings.myHandle.isEmpty
+    }
+    
     let storage: StorageManager
     private var apiClient: APIClient
     let presenceMonitor: PresenceMonitor
     private var updateTimer: Timer?
     private var pollTimer: Timer?
+    private var lastOnlineSuccess: Date? = Date()
     
     init(storage: StorageManager) {
         self.storage = storage
@@ -70,9 +75,17 @@ class AppState: ObservableObject {
                 userId: settings.myUserId,
                 state: presenceMonitor.currentState
             )
+            lastOnlineSuccess = Date()
             isOnline = true
         } catch {
-            isOnline = false
+            if let last = lastOnlineSuccess {
+                let cutoff = last.addingTimeInterval(TimeInterval(settings.pollIntervalSeconds * 2))
+                if Date() > cutoff {
+                    isOnline = false
+                }
+            } else {
+                isOnline = false
+            }
         }
     }
     
@@ -166,6 +179,11 @@ class AppState: ObservableObject {
         Task {
             await createRequest(toUserId: peer.peerUserId)
         }
+    }
+    
+    func updatePeer(_ peer: Peer) {
+        storage.updatePeer(peer)
+        settings = storage.settings
     }
     
     func removePeer(_ peerUserId: String) {

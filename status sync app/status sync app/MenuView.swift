@@ -8,6 +8,35 @@
 import SwiftUI
 import AppKit
 
+@ViewBuilder
+func avatarView(text: String, avatarData: Data? = nil, size: CGFloat = 24) -> some View {
+    if let data = avatarData, let nsImage = NSImage(data: data) {
+        Image(nsImage: nsImage)
+            .resizable()
+            .scaledToFill()
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+    } else {
+        let initials = initialsFrom(text)
+        Text(initials.isEmpty ? "?" : initials)
+            .font(.caption.weight(.bold))
+            .foregroundColor(.white)
+            .frame(width: size, height: size)
+            .background(Circle().fill(Color.accentColor.opacity(0.9)))
+    }
+}
+
+func initialsFrom(_ text: String) -> String {
+    let parts = text.split(separator: " ")
+    if let first = parts.first?.first {
+        if parts.count > 1, let second = parts.dropFirst().first?.first {
+            return String([first, second]).uppercased()
+        }
+        return String(first).uppercased()
+    }
+    return "?"
+}
+
 struct MenuView: View {
     @ObservedObject var appState: AppState
     @State private var showAddPeerSheet = false
@@ -17,11 +46,20 @@ struct MenuView: View {
             // My Status Section
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("Status: \(appState.presenceMonitor.currentState.rawValue.capitalized)")
-                        .font(.headline)
-                    Circle()
-                        .fill(statusColor(for: appState.presenceMonitor.currentState))
-                        .frame(width: 8, height: 8)
+                    let myName = appState.settings.myDisplayName.isEmpty ? "You" : appState.settings.myDisplayName
+                    avatarView(text: myName, avatarData: appState.settings.myAvatarData)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(myName)
+                            .font(.headline)
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(statusColor(for: appState.presenceMonitor.currentState))
+                                .frame(width: 8, height: 8)
+                            Text(appState.presenceMonitor.currentState.rawValue.capitalized)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 
                 HStack {
@@ -50,25 +88,44 @@ struct MenuView: View {
             
             Divider()
             
-            // Peers Section
+            if appState.profileNeedsSetup {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Complete your profile")
+                        .font(.headline)
+                        .padding(.horizontal, 12)
+                    SettingsLink {
+                        Label("Open Settings", systemImage: "gearshape")
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 4)
+                
+                Divider()
+            }
+            
+            // Contacts Section
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Peers")
+                    Text("Contacts")
                         .font(.headline)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                     Spacer()
                     Button(action: {
-                        showAddPeerSheet = true
+                        NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+                        AddPeerWindowController.shared.present(appState: appState)
                     }) {
                         Image(systemName: "plus")
+                            .padding(6)
                     }
                     .buttonStyle(.plain)
                     .padding(.trailing, 12)
                 }
                 
                 if appState.settings.peers.isEmpty {
-                    Text("No peers added")
+                    Text("No contacts added")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 12)
@@ -106,6 +163,10 @@ struct MenuView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+                NSApp.activate(ignoringOtherApps: true)
+            })
             .buttonStyle(.plain)
             
             Button(action: {
@@ -118,11 +179,8 @@ struct MenuView: View {
             .padding(.vertical, 6)
         }
         .frame(width: 280)
-        .sheet(isPresented: $showAddPeerSheet) {
-            AddPeerView(appState: appState)
-        }
     }
-    
+        
     private func statusColor(for state: PresenceState) -> Color {
         switch state {
         case .active: return .green
@@ -144,13 +202,42 @@ struct PeerRow: View {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
     
+    private var displayLabel: String {
+        if !peer.displayName.isEmpty { return peer.displayName }
+        if !peer.handle.isEmpty { return peer.handle }
+        return peer.peerUserId
+    }
+    
+    private var subtitleLabel: String {
+        if !peer.handle.isEmpty { return peer.handle }
+        return peer.peerUserId
+    }
+    
+    private func avatarInitials() -> String {
+        let source = displayLabel
+        let parts = source.split(separator: " ")
+        if let first = parts.first?.first {
+            if parts.count > 1, let second = parts.dropFirst().first?.first {
+                return String([first, second]).uppercased()
+            }
+            return String(first).uppercased()
+        }
+        return "?"
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
+                avatarView(text: displayLabel, avatarData: peer.avatarData)
+                
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(peer.displayName)
+                    Text(displayLabel)
                         .font(.subheadline)
                         .fontWeight(.medium)
+                    
+                    Text(subtitleLabel)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                     
                     if let presence = peer.lastKnownPresence {
                         VStack(alignment: .leading, spacing: 2) {
@@ -194,6 +281,13 @@ struct PeerRow: View {
                         Label("FaceTime Audio", systemImage: "phone")
                     }
                     
+                    Button(action: {
+                        NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+                        EditContactWindowController.shared.present(appState: appState, peer: peer)
+                    }) {
+                        Label("Edit Contact", systemImage: "pencil")
+                    }
+                    
                     Divider()
                     
                     Button(role: .destructive, action: {
@@ -221,19 +315,25 @@ struct PeerRow: View {
     }
     
     private func openMessage(handle: String) {
-        if let url = URL(string: "sms:\(handle)") {
+        let h = normalizeHandle(handle)
+        guard !h.isEmpty else { return }
+        if let url = URL(string: "sms:\(h)") {
             NSWorkspace.shared.open(url)
         }
     }
     
     private func openFaceTime(handle: String) {
-        if let url = URL(string: "facetime://\(handle)") {
+        let h = normalizeHandle(handle)
+        guard !h.isEmpty else { return }
+        if let url = URL(string: "facetime://\(h)") {
             NSWorkspace.shared.open(url)
         }
     }
     
     private func openFaceTimeAudio(handle: String) {
-        if let url = URL(string: "facetime-audio://\(handle)") {
+        let h = normalizeHandle(handle)
+        guard !h.isEmpty else { return }
+        if let url = URL(string: "facetime-audio://\(h)") {
             NSWorkspace.shared.open(url)
         }
     }

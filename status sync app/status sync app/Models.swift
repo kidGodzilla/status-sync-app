@@ -12,6 +12,7 @@ struct Peer: Codable, Identifiable {
     let peerUserId: String
     var displayName: String
     var handle: String // email or phone for iMessage/FaceTime
+    var avatarData: Data?
     var capabilityToken: String?
     var lastKnownPresence: PeerPresence?
     
@@ -39,6 +40,9 @@ struct PresenceRequest: Codable, Identifiable {
 
 struct AppSettings: Codable {
     var myUserId: String
+    var myDisplayName: String
+    var myHandle: String
+    var myAvatarData: Data?
     var serverBaseURL: String
     var presenceThresholdSeconds: Int
     var pollIntervalSeconds: Int
@@ -46,7 +50,10 @@ struct AppSettings: Codable {
     
     static let `default` = AppSettings(
         myUserId: UUID().uuidString,
-        serverBaseURL: "https://statussync.jamesfuthey.com/",
+        myDisplayName: "",
+        myHandle: "",
+        myAvatarData: nil,
+        serverBaseURL: "https://statussync.jamesfuthey.com",
         presenceThresholdSeconds: 120,
         pollIntervalSeconds: 30,
         peers: []

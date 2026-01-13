@@ -18,6 +18,13 @@ struct status_sync_appApp: App {
         let appState = AppState(storage: storage)
         _storage = StateObject(wrappedValue: storage)
         _appState = StateObject(wrappedValue: appState)
+        
+        // Show profile wizard on launch if needed
+        DispatchQueue.main.async {
+            if appState.profileNeedsSetup {
+                ProfileWizardWindowController.shared.present(appState: appState)
+            }
+        }
     }
     
     var body: some Scene {

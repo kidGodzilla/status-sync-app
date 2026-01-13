@@ -9,75 +9,67 @@ import SwiftUI
 
 struct AddPeerView: View {
     @ObservedObject var appState: AppState
-    @Environment(\.dismiss) private var dismiss
+    var onDone: (() -> Void)? = nil
     @FocusState private var focusedField: Field?
     
     @State private var peerUserId: String = ""
-    @State private var displayName: String = ""
-    @State private var handle: String = ""
     
     enum Field {
-        case displayName, handle, userId
+        case userId
     }
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("Add Peer")
-                .font(.title2)
-                .fontWeight(.semibold)
+            Text("Add Contact")
+                .font(.headline)
             
-            Form {
-                TextField("Display Name", text: $displayName)
-                    .focused($focusedField, equals: .displayName)
-                
-                TextField("Email or Phone", text: $handle)
-                    .focused($focusedField, equals: .handle)
-                    .help("Used for iMessage/FaceTime shortcuts")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Enter their User ID (shared out-of-band)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 
                 TextField("User ID", text: $peerUserId)
                     .focused($focusedField, equals: .userId)
-                    .help("Ask the person for their Status Sync User ID")
-            }
-            .formStyle(.grouped)
-            .frame(width: 400)
-            
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .keyboardShortcut(.cancelAction)
-                
-                Spacer()
                 
                 Button("Add") {
                     addPeer()
                 }
                 .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(!isValid)
+                .disabled(peerUserId.isEmpty)
+                .frame(maxWidth: .infinity)
             }
+            
+            Button("Cancel") {
+                onDone?()
+            }
+            .buttonStyle(.plain)
         }
-        .padding()
+        .padding(20)
+        .frame(width: 280)
         .onAppear {
-            focusedField = .displayName
+            focusedField = .userId
         }
-    }
-    
-    private var isValid: Bool {
-        !displayName.isEmpty && !handle.isEmpty && !peerUserId.isEmpty
     }
     
     private func addPeer() {
-        guard isValid else { return }
+        guard !peerUserId.isEmpty else { return }
+        
+        let isSelf = peerUserId == appState.settings.myUserId
+        let name = isSelf
+            ? (appState.settings.myDisplayName.isEmpty ? "You" : appState.settings.myDisplayName)
+            : "Contact"
+        let h = isSelf ? appState.settings.myHandle : ""
+        let avatar = isSelf ? appState.settings.myAvatarData : nil
         
         let peer = Peer(
             peerUserId: peerUserId,
-            displayName: displayName,
-            handle: handle,
+            displayName: name,
+            handle: h,
+            avatarData: avatar,
             capabilityToken: nil,
             lastKnownPresence: nil
         )
         appState.addPeer(peer)
-        dismiss()
+        onDone?()
     }
 }

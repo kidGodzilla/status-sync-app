@@ -45,7 +45,12 @@ class APIClient {
     private let baseURL: String
     
     init(baseURL: String) {
-        self.baseURL = baseURL
+        // Normalize: trim whitespace and drop a trailing slash to avoid "//"
+        var normalized = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if normalized.hasSuffix("/") {
+            normalized.removeLast()
+        }
+        self.baseURL = normalized
     }
     
     private func url(path: String) -> URL? {
