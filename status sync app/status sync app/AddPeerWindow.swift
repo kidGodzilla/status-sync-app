@@ -15,9 +15,11 @@ final class AddPeerWindowController {
     private var window: NSPanel?
     
     func present(appState: AppState) {
+        // Activate app first
+        NSApp.activate(ignoringOtherApps: true)
+        
         if let window, window.isVisible {
             window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
             return
         }
         
@@ -35,13 +37,12 @@ final class AddPeerWindowController {
         panel.title = "Add Contact"
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
-        panel.level = .modalPanel
+        panel.level = .floating
+        panel.collectionBehavior = .canJoinAllSpaces
         panel.contentView = NSHostingView(rootView: content)
         panel.center()
         
         self.window = panel
         panel.makeKeyAndOrderFront(nil)
-        panel.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
     }
 }

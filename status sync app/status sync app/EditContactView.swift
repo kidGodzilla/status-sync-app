@@ -30,29 +30,36 @@ struct EditContactView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 16) {
             Text("Edit Contact")
                 .font(.headline)
             
-            TextField("Display name", text: $displayName)
-                .focused($focusedField, equals: .name)
-            TextField("Handle (email or phone)", text: $handle)
-                .focused($focusedField, equals: .handle)
-                .help("Used locally for iMessage/FaceTime shortcuts")
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Display name", text: $displayName)
+                    .focused($focusedField, equals: .name)
+                
+                TextField("Handle (email or phone)", text: $handle)
+                    .focused($focusedField, equals: .handle)
+            }
             
             HStack(spacing: 12) {
                 avatarPreview()
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Button("Choose Photo") { pickAvatar() }
+                        .controlSize(.small)
                     Button("Clear Photo") { avatarData = nil }
+                        .controlSize(.small)
                         .disabled(avatarData == nil)
                 }
             }
             
-            Spacer()
-            
             HStack {
+                Button("Cancel") {
+                    onDone?()
+                }
+                
                 Spacer()
+                
                 Button("Save") {
                     save()
                 }
@@ -60,8 +67,8 @@ struct EditContactView: View {
                 .disabled(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .padding(16)
-        .frame(width: 360, height: 200)
+        .padding(20)
+        .frame(width: 380)
         .onAppear { focusedField = .name }
     }
     

@@ -13,6 +13,9 @@ final class EditContactWindowController {
     private var window: NSPanel?
     
     func present(appState: AppState, peer: Peer) {
+        // Activate app first
+        NSApp.activate(ignoringOtherApps: true)
+        
         // Close any existing edit window
         window?.close()
         window = nil
@@ -23,7 +26,7 @@ final class EditContactWindowController {
         }
         
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 200),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 280),
             styleMask: [.titled, .closable, .utilityWindow],
             backing: .buffered,
             defer: false
@@ -31,13 +34,12 @@ final class EditContactWindowController {
         panel.title = "Edit Contact"
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
-        panel.level = .modalPanel
+        panel.level = .floating
+        panel.collectionBehavior = .canJoinAllSpaces
         panel.contentView = NSHostingView(rootView: content)
         panel.center()
         
         self.window = panel
         panel.makeKeyAndOrderFront(nil)
-        panel.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
     }
 }

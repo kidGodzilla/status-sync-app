@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
@@ -29,88 +30,89 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Settings")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Group {
-                Text("Server")
-                    .font(.headline)
-                TextField("Server Base URL", text: $serverURL)
-            }
-            
-            Group {
-                Text("Presence")
-                    .font(.headline)
-                Stepper(value: $thresholdSeconds, in: 30...600, step: 30) {
-                    Text("Presence Threshold: \(thresholdSeconds) seconds")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Group {
+                    Text("Server")
+                        .font(.headline)
+                    TextField("Server Base URL", text: $serverURL)
                 }
-                Stepper(value: $pollIntervalSeconds, in: 10...60, step: 10) {
-                    Text("Poll Interval: \(pollIntervalSeconds) seconds")
-                }
-            }
-            
-            Group {
-                Text("Your Info")
-                    .font(.headline)
-                TextField("Your display name", text: $myDisplayName)
-                TextField("Your handle (email or phone)", text: $myHandle)
-                    .help("Used locally for iMessage/FaceTime shortcuts")
                 
-                HStack(spacing: 12) {
-                    avatarPreview()
-                    VStack(alignment: .leading, spacing: 6) {
-                        Button("Choose Photo") { pickAvatar() }
-                        Button("Clear Photo") { myAvatarData = nil }
-                            .disabled(myAvatarData == nil)
+                Group {
+                    Text("Presence")
+                        .font(.headline)
+                    Stepper(value: $thresholdSeconds, in: 30...600, step: 30) {
+                        Text("Presence Threshold: \(thresholdSeconds) seconds")
+                    }
+                    Stepper(value: $pollIntervalSeconds, in: 10...60, step: 10) {
+                        Text("Poll Interval: \(pollIntervalSeconds) seconds")
                     }
                 }
-            }
-            
-            Spacer()
-            
-            if let saveFeedback {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text(saveFeedback)
-                        .foregroundColor(.secondary)
-                    Spacer()
+                
+                Group {
+                    Text("Your Info")
+                        .font(.headline)
+                    TextField("Your display name", text: $myDisplayName)
+                    TextField("Your handle (email or phone)", text: $myHandle)
+                        .help("Used locally for iMessage/FaceTime shortcuts")
+                    
+                    HStack(spacing: 12) {
+                        avatarPreview()
+                        VStack(alignment: .leading, spacing: 8) {
+                            Button("Choose Photo") { pickAvatar() }
+                                .controlSize(.small)
+                            Button("Clear Photo") { myAvatarData = nil }
+                                .controlSize(.small)
+                                .disabled(myAvatarData == nil)
+                        }
+                    }
                 }
-                .font(.caption)
-            }
-            
-            Button(action: {
+                
+                if let saveFeedback {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text(saveFeedback)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .font(.caption)
+                }
+                
+                Button(action: {
                     var cleanedURL = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
                     if cleanedURL.hasSuffix("/") {
                         cleanedURL.removeLast()
                     }
                     
                     appState.storage.settings.serverBaseURL = cleanedURL
-                appState.storage.settings.presenceThresholdSeconds = thresholdSeconds
-                appState.storage.settings.pollIntervalSeconds = pollIntervalSeconds
+                    appState.storage.settings.presenceThresholdSeconds = thresholdSeconds
+                    appState.storage.settings.pollIntervalSeconds = pollIntervalSeconds
                     appState.storage.settings.myDisplayName = myDisplayName
                     appState.storage.settings.myHandle = normalizeHandle(myHandle)
-                appState.storage.settings.myAvatarData = myAvatarData
-                appState.storage.save()
-                appState.updateSettings()
-                
-                // Sync profile to server
-                appState.syncMyProfileToServer()
-                
-                saveFeedback = "Saved"
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    saveFeedback = nil
+                    appState.storage.settings.myAvatarData = myAvatarData
+                    appState.storage.save()
+                    appState.updateSettings()
+                    
+                    // Sync profile to server
+                    appState.syncMyProfileToServer()
+                    
+                    saveFeedback = "Saved"
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        saveFeedback = nil
+                    }
+                }) {
+                    Text("Save")
+                        .frame(maxWidth: .infinity)
                 }
-            }) {
-                Text("Save")
-                    .frame(maxWidth: .infinity)
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
+            .padding(20)
         }
-        .padding(20)
-        .frame(minWidth: 420, minHeight: 320)
+        .frame(minWidth: 500, minHeight: 500)
+        .background(WindowAccessor { window in
+            window?.title = "Settings"
+        })
     }
     
     @ViewBuilder

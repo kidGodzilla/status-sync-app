@@ -211,7 +211,6 @@ class AppState: ObservableObject {
     func syncMyProfileToServer() {
         Task {
             do {
-                let avatarBase64 = settings.myAvatarData?.base64EncodedString()
                 try await apiClient.updateProfile(
                     userId: settings.myUserId,
                     displayName: settings.myDisplayName,
