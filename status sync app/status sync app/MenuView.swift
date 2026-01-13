@@ -41,6 +41,7 @@ func initialsFrom(_ text: String) -> String {
 struct MenuView: View {
     @ObservedObject var appState: AppState
     @State private var showAddPeerSheet = false
+    @Environment(\.openSettings) private var openSettings
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -60,6 +61,14 @@ struct MenuView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
+                    }
+                }
+                .onTapGesture(count: 2) {
+                    // Close the menu first
+                    NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+                    // Then open Settings after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        openSettings()
                     }
                 }
                 
