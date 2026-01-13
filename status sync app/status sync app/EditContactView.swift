@@ -104,7 +104,8 @@ struct EditContactView: View {
         panel.canChooseDirectories = false
         panel.begin { resp in
             if resp == .OK, let url = panel.url, let data = try? Data(contentsOf: url) {
-                avatarData = data
+                // Compress the image before storing
+                avatarData = compressAvatar(data) ?? data
             }
         }
     }

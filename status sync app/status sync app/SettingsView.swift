@@ -146,7 +146,8 @@ struct SettingsView: View {
         panel.canChooseDirectories = false
         panel.begin { resp in
             if resp == .OK, let url = panel.url, let data = try? Data(contentsOf: url) {
-                myAvatarData = data
+                // Compress the image before storing
+                myAvatarData = compressAvatar(data) ?? data
             }
         }
     }
