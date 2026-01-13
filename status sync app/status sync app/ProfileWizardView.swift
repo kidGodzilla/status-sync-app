@@ -53,9 +53,25 @@ struct ProfileWizardView: View {
     
     private func save() {
         appState.storage.settings.myDisplayName = displayName
-        appState.storage.settings.myHandle = handle
+        appState.storage.settings.myHandle = normalizeHandle(handle)
         appState.storage.save()
         appState.updateSettings()
+        
+        // Sync profile to server
+        appState.syncMyProfileToServer()
+        
         onDone?()
+    }
+    
+    private func normalizeHandle(_ handle: String) -> String {
+        let trimmed = handle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.contains("@") {
+            // Email: lowercase
+            return trimmed.lowercased()
+        } else {
+            // Phone: keep + prefix, strip other non-digits
+            let digits = trimmed.filter { $0.isNumber || $0 == "+" }
+            return digits.hasPrefix("+") ? digits : "+" + digits.filter { $0.isNumber }
+        }
     }
 }

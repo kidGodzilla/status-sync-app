@@ -54,18 +54,12 @@ struct AddPeerView: View {
     private func addPeer() {
         guard !peerUserId.isEmpty else { return }
         
-        let isSelf = peerUserId == appState.settings.myUserId
-        let name = isSelf
-            ? (appState.settings.myDisplayName.isEmpty ? "You" : appState.settings.myDisplayName)
-            : "Contact"
-        let h = isSelf ? appState.settings.myHandle : ""
-        let avatar = isSelf ? appState.settings.myAvatarData : nil
-        
+        // Create peer with placeholder - profile will be fetched from server
         let peer = Peer(
             peerUserId: peerUserId,
-            displayName: name,
-            handle: h,
-            avatarData: avatar,
+            displayName: "Contact",
+            handle: "",
+            avatarData: nil,
             capabilityToken: nil,
             lastKnownPresence: nil
         )

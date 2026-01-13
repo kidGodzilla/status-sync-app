@@ -41,6 +41,18 @@ struct PresenceGetResponse: Codable {
     }
 }
 
+struct ProfileGetResponse: Codable {
+    let ok: Bool
+    let profile: ProfileData?
+    
+    struct ProfileData: Codable {
+        let user_id: String
+        let displayName: String
+        let handle: String
+        let avatarData: String?
+    }
+}
+
 class APIClient {
     private let baseURL: String
     
@@ -189,6 +201,40 @@ class APIClient {
         
         let response = try await self.request(request, responseType: PresenceGetResponse.self)
         return response.presence
+    }
+    
+    func updateProfile(userId: String, displayName: String, handle: String, avatarData: Data?) async throws {
+        guard let url = url(path: "/profile/update") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        var body: [String: Any] = [
+            "user_id": userId,
+            "displayName": displayName,
+            "handle": handle
+        ]
+        if let avatarData = avatarData {
+            body["avatarData"] = avatarData.base64EncodedString()
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        _ = try await self.request(request, responseType: APIResponse<Bool>.self)
+    }
+    
+    func getProfile(userId: String) async throws -> ProfileGetResponse.ProfileData? {
+        guard let url = url(path: "/profile/get?user_id=\(userId)") else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        let response = try await self.request(request, responseType: ProfileGetResponse.self)
+        return response.profile
     }
 }
 

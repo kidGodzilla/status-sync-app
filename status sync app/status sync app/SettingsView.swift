@@ -95,6 +95,10 @@ struct SettingsView: View {
                 appState.storage.settings.myAvatarData = myAvatarData
                 appState.storage.save()
                 appState.updateSettings()
+                
+                // Sync profile to server
+                appState.syncMyProfileToServer()
+                
                 saveFeedback = "Saved"
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     saveFeedback = nil

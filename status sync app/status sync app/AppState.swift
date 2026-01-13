@@ -122,6 +122,11 @@ class AppState: ObservableObject {
             guard let token = peer.capabilityToken else { continue }
             await pollPeerPresence(peer: peer, token: token)
         }
+        
+        // Poll peer profiles for all contacts
+        for peer in settings.peers {
+            await fetchPeerProfile(peerUserId: peer.peerUserId)
+        }
     }
     
     private func pollPeerPresence(peer: Peer, token: String) async {
@@ -175,9 +180,47 @@ class AppState: ObservableObject {
         storage.addPeer(peer)
         settings = storage.settings
         
-        // Create request to peer
+        // Fetch profile from server
         Task {
+            await fetchPeerProfile(peerUserId: peer.peerUserId)
+            // Create request to peer
             await createRequest(toUserId: peer.peerUserId)
+        }
+    }
+    
+    private func fetchPeerProfile(peerUserId: String) async {
+        do {
+            if let profile = try await apiClient.getProfile(userId: peerUserId) {
+                if let index = settings.peers.firstIndex(where: { $0.peerUserId == peerUserId }) {
+                    var updatedPeer = settings.peers[index]
+                    updatedPeer.displayName = profile.displayName
+                    updatedPeer.handle = profile.handle
+                    if let avatarBase64 = profile.avatarData,
+                       let avatarData = Data(base64Encoded: avatarBase64) {
+                        updatedPeer.avatarData = avatarData
+                    }
+                    storage.updatePeer(updatedPeer)
+                    settings.peers[index] = updatedPeer
+                }
+            }
+        } catch {
+            // Quiet error handling
+        }
+    }
+    
+    func syncMyProfileToServer() {
+        Task {
+            do {
+                let avatarBase64 = settings.myAvatarData?.base64EncodedString()
+                try await apiClient.updateProfile(
+                    userId: settings.myUserId,
+                    displayName: settings.myDisplayName,
+                    handle: settings.myHandle,
+                    avatarData: settings.myAvatarData
+                )
+            } catch {
+                // Quiet error handling
+            }
         }
     }
     
