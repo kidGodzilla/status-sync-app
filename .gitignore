@@ -2,3 +2,14 @@
 node_modules
 package-lock.json
 .DS_Store
+
+# Xcode user-specific files
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
