@@ -202,6 +202,15 @@ struct PeerRow: View {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
     
+    private func formatLocalTime(_ timestamp: Int64) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        formatter.timeZone = TimeZone.current
+        return formatter.string(from: date)
+    }
+    
     private var displayLabel: String {
         if !peer.displayName.isEmpty { return peer.displayName }
         if !peer.handle.isEmpty { return peer.handle }
@@ -252,9 +261,10 @@ struct PeerRow: View {
                             Text(formatTimestamp(presence.timestamp))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
+                                .help(formatLocalTime(presence.timestamp))
                         }
                     } else {
-                        Text("Unknown")
+                        Text(peer.capabilityToken == nil ? "Pending approval" : "Unknown")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
