@@ -17,7 +17,7 @@ const express = require("express");
 const crypto = require("crypto");
 
 const app = express();
-app.use(express.json({ limit: "64kb" }));
+app.use(express.json({ limit: "2mb" })); // Increased for avatar images
 
 // ----- Config -----
 const PORT = Number(process.env.PORT || 5000);
