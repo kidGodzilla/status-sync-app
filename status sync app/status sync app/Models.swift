@@ -46,7 +46,7 @@ struct AppSettings: Codable {
     
     static let `default` = AppSettings(
         myUserId: UUID().uuidString,
-        serverBaseURL: "http://localhost:8787",
+        serverBaseURL: "https://statussync.jamesfuthey.com/",
         presenceThresholdSeconds: 120,
         pollIntervalSeconds: 30,
         peers: []
