@@ -17,6 +17,7 @@ struct SettingsView: View {
     @State private var myDisplayName: String
     @State private var myHandle: String
     @State private var myAvatarData: Data?
+    @State private var startAtLogin: Bool
     @State private var saveFeedback: String?
     
     init(appState: AppState) {
@@ -27,6 +28,7 @@ struct SettingsView: View {
         _myDisplayName = State(initialValue: appState.settings.myDisplayName)
         _myHandle = State(initialValue: appState.settings.myHandle)
         _myAvatarData = State(initialValue: appState.settings.myAvatarData)
+        _startAtLogin = State(initialValue: appState.settings.startAtLogin)
     }
     
     var body: some View {
@@ -67,6 +69,13 @@ struct SettingsView: View {
                         Text("Poll Interval: \(pollIntervalSeconds) seconds")
                     }
                 }
+
+                Group {
+                    Text("General")
+                        .font(.headline)
+                    Toggle("Start at Login", isOn: $startAtLogin)
+                        .help("Automatically launch Status Sync when you log in")
+                }
                 
                 if let saveFeedback {
                     HStack {
@@ -91,8 +100,16 @@ struct SettingsView: View {
                     appState.storage.settings.myDisplayName = myDisplayName
                     appState.storage.settings.myHandle = normalizeHandle(myHandle)
                     appState.storage.settings.myAvatarData = myAvatarData
+                    appState.storage.settings.startAtLogin = startAtLogin
                     appState.storage.save()
                     appState.updateSettings()
+
+                    // Apply login item preference (best-effort; may require user approval / app location)
+                    do {
+                        try LoginItemManager.shared.setEnabled(startAtLogin)
+                    } catch {
+                        print("DEBUG: setEnabled(startAtLogin=\(startAtLogin)) ERROR \(error)")
+                    }
                     
                     // Sync profile to server
                     print("DEBUG: SettingsView Save button clicked, calling syncMyProfileToServer")
@@ -112,6 +129,8 @@ struct SettingsView: View {
         }
         .frame(minWidth: 500, minHeight: 500)
         .onAppear {
+            // Keep toggle in sync with reality (e.g. if user changes it in System Settings).
+            startAtLogin = LoginItemManager.shared.isEnabled
             DispatchQueue.main.async {
                 // Set window title to "Settings"
                 NSApplication.shared.windows.forEach { window in

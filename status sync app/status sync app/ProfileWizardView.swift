@@ -14,6 +14,7 @@ struct ProfileWizardView: View {
     
     @State private var displayName: String
     @State private var handle: String
+    private let wasProfileIncomplete: Bool
     
     enum Field { case name, handle }
     
@@ -22,6 +23,7 @@ struct ProfileWizardView: View {
         self.onDone = onDone
         _displayName = State(initialValue: appState.settings.myDisplayName)
         _handle = State(initialValue: appState.settings.myHandle)
+        self.wasProfileIncomplete = appState.settings.myDisplayName.isEmpty || appState.settings.myHandle.isEmpty
     }
     
     var body: some View {
@@ -54,6 +56,17 @@ struct ProfileWizardView: View {
     private func save() {
         appState.storage.settings.myDisplayName = displayName
         appState.storage.settings.myHandle = normalizeHandle(handle)
+
+        // Default to enabling "Start at Login" after initial setup completes.
+        if wasProfileIncomplete && !appState.storage.settings.startAtLogin {
+            appState.storage.settings.startAtLogin = true
+            do {
+                try LoginItemManager.shared.setEnabled(true)
+            } catch {
+                print("DEBUG: ProfileWizard setEnabled(startAtLogin=true) ERROR \(error)")
+            }
+        }
+
         appState.storage.save()
         appState.updateSettings()
         

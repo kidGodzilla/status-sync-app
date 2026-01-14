@@ -33,6 +33,17 @@ class AppState: ObservableObject {
         let threshold = storage.settings.presenceThresholdSeconds
         self.apiClient = APIClient(baseURL: serverURL)
         self.presenceMonitor = PresenceMonitor(thresholdSeconds: threshold)
+
+        // Apply "Start at Login" preference on launch (best-effort).
+        // This may require user approval and/or the app being in /Applications.
+        let desiredStartAtLogin = storage.settings.startAtLogin
+        if desiredStartAtLogin != LoginItemManager.shared.isEnabled {
+            do {
+                try LoginItemManager.shared.setEnabled(desiredStartAtLogin)
+            } catch {
+                print("DEBUG: setEnabled(startAtLogin=\(desiredStartAtLogin)) ERROR \(error)")
+            }
+        }
         
         startTimers()
     }
