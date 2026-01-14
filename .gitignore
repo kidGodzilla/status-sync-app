@@ -3,6 +3,14 @@ node_modules
 package-lock.json
 .DS_Store
 
+# Xcode build artifacts
+*.app
+build/
+DerivedData/
+*.xcarchive
+*.dSYM.zip
+*.dSYM
+
 # Xcode user-specific files
 *.xcuserstate
 *.xcuserdatad
@@ -11,5 +19,3 @@ xcuserdata/
 *.xcscmblueprint
 *.hmap
 *.ipa
-*.dSYM.zip
-*.dSYM
