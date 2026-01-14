@@ -32,51 +32,58 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Group {
-                    Text("Your Info")
-                        .font(.headline)
-                    TextField("Your display name", text: $myDisplayName)
-                    TextField("Your handle (email or phone)", text: $myHandle)
-                        .help("Used locally for iMessage/FaceTime shortcuts")
-                    
-                    HStack(spacing: 12) {
-                        avatarPreview()
-                        VStack(alignment: .leading, spacing: 8) {
-                            Button("Choose Photo") { pickAvatar() }
-                                .controlSize(.small)
-                            Button("Clear Photo") { myAvatarData = nil }
-                                .controlSize(.small)
-                                .disabled(myAvatarData == nil)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Group {
+                        Text("Your Info")
+                            .font(.headline)
+                        TextField("Your display name", text: $myDisplayName)
+                        TextField("Your handle (email or phone)", text: $myHandle)
+                            .help("Used locally for iMessage/FaceTime shortcuts")
+                        
+                        HStack(spacing: 12) {
+                            avatarPreview()
+                            VStack(alignment: .leading, spacing: 8) {
+                                Button("Choose Photo") { pickAvatar() }
+                                    .controlSize(.small)
+                                Button("Clear Photo") { myAvatarData = nil }
+                                    .controlSize(.small)
+                                    .disabled(myAvatarData == nil)
+                            }
                         }
                     }
-                }
-
-                Group {
-                    Text("Server")
-                        .font(.headline)
-                    TextField("Server Base URL", text: $serverURL)
-                }
-                
-                Group {
-                    Text("Presence")
-                        .font(.headline)
-                    Stepper(value: $thresholdSeconds, in: 30...600, step: 30) {
-                        Text("Presence Threshold: \(thresholdSeconds) seconds")
+                    
+                    Group {
+                        Text("Server")
+                            .font(.headline)
+                        TextField("Server Base URL", text: $serverURL)
                     }
-                    Stepper(value: $pollIntervalSeconds, in: 10...60, step: 10) {
-                        Text("Poll Interval: \(pollIntervalSeconds) seconds")
+                    
+                    Group {
+                        Text("Presence")
+                            .font(.headline)
+                        Stepper(value: $thresholdSeconds, in: 30...600, step: 30) {
+                            Text("Presence Threshold: \(thresholdSeconds) seconds")
+                        }
+                        Stepper(value: $pollIntervalSeconds, in: 10...60, step: 10) {
+                            Text("Poll Interval: \(pollIntervalSeconds) seconds")
+                        }
+                    }
+                    
+                    Group {
+                        Text("General")
+                            .font(.headline)
+                        Toggle("Start at Login", isOn: $startAtLogin)
+                            .help("Automatically launch Status Sync when you log in")
                     }
                 }
-
-                Group {
-                    Text("General")
-                        .font(.headline)
-                    Toggle("Start at Login", isOn: $startAtLogin)
-                        .help("Automatically launch Status Sync when you log in")
-                }
-                
+                .padding(20)
+            }
+            
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 10) {
                 if let saveFeedback {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
@@ -125,9 +132,9 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.borderedProminent)
             }
-            .padding(20)
+            .padding(16)
         }
-        .frame(minWidth: 500, minHeight: 500)
+        .frame(minWidth: 520, minHeight: 620)
         .onAppear {
             // Keep toggle in sync with reality (e.g. if user changes it in System Settings).
             startAtLogin = LoginItemManager.shared.isEnabled
