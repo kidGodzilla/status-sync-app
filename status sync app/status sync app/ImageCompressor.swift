@@ -8,7 +8,7 @@
 import Foundation
 import AppKit
 
-func compressAvatar(_ imageData: Data, maxDimension: CGFloat = 200, maxSizeKB: Int = 50) -> Data? {
+func compressAvatar(_ imageData: Data, maxDimension: CGFloat = 128, maxSizeKB: Int = 50) -> Data? {
     guard let image = NSImage(data: imageData) else { return nil }
     
     // Get the original size
