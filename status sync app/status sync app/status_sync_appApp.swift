@@ -19,6 +19,9 @@ struct status_sync_appApp: App {
         _storage = StateObject(wrappedValue: storage)
         _appState = StateObject(wrappedValue: appState)
         
+        // Hide Dock icon - this is a menubar-only app
+        NSApplication.shared.setActivationPolicy(.accessory)
+        
         // Show profile wizard on launch if needed
         DispatchQueue.main.async {
             if appState.profileNeedsSetup {
