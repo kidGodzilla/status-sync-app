@@ -42,6 +42,10 @@ struct MenuView: View {
     @ObservedObject var appState: AppState
     @State private var showAddPeerSheet = false
     @Environment(\.openSettings) private var openSettings
+    @State private var isHoveringMyIdRow = false
+    @State private var isHoveringSettingsRow = false
+    @State private var isHoveringQuitRow = false
+    @State private var didCopyMyId = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -64,36 +68,66 @@ struct MenuView: View {
                     }
                 }
                 .onTapGesture(count: 2) {
-                    // Close the menu first
-                    NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
-                    // Then open Settings after a short delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        openSettings()
-                    }
+                    openSettingsAndBringToFront()
                 }
+                .padding(.horizontal, 12)
                 
                 HStack {
                     Text("ID: \(appState.settings.myUserId)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
+                    Spacer()
                     Button(action: {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(appState.settings.myUserId, forType: .string)
+                        copyMyUserIdToClipboard()
                     }) {
-                        Image(systemName: "doc.on.doc")
-                            .font(.caption)
+                        ZStack {
+                            Image(systemName: "doc.on.doc")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .opacity(didCopyMyId ? 0 : 1)
+                            Image(systemName: "checkmark")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                                .opacity(didCopyMyId ? 1 : 0)
+                        }
+                        .frame(width: 18, height: 18)
                     }
                     .buttonStyle(.plain)
+                    .offset(x: 2)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { copyMyUserIdToClipboard() }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(isHoveringMyIdRow ? hoverBackground : Color.clear)
+                .cornerRadius(8)
+                .padding(.horizontal, 6)
+                .overlay(alignment: .trailing) {
+                    if didCopyMyId {
+                        Text("Copied")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(nsColor: NSColor.windowBackgroundColor).opacity(0.9))
+                            .cornerRadius(4)
+                            .padding(.trailing, 12 + 18 + 8) // row inner right + icon width + gap
+                            .transition(.opacity)
+                    }
+                }
+                .onHover { hovering in
+                    isHoveringMyIdRow = hovering
                 }
                 
                 if !appState.isOnline {
                     Text("Offline")
                         .font(.caption)
                         .foregroundColor(.orange)
+                        .padding(.horizontal, 12)
                 }
             }
-            .padding(.horizontal, 12)
             .padding(.vertical, 8)
             
             Divider()
@@ -103,7 +137,7 @@ struct MenuView: View {
                     Text("Complete your profile")
                         .font(.headline)
                         .padding(.horizontal, 12)
-                    SettingsLink {
+                    Button(action: { openSettingsAndBringToFront() }) {
                         Label("Open Settings", systemImage: "gearshape")
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
@@ -120,18 +154,20 @@ struct MenuView: View {
                 HStack {
                     Text("Contacts")
                         .font(.headline)
-                        .padding(.horizontal, 12)
+                        .padding(.leading, 12)
                         .padding(.vertical, 6)
                     Spacer()
                     Button(action: {
-                        NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
-                        AddPeerWindowController.shared.present(appState: appState)
+                        collapseMenu()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            AddPeerWindowController.shared.present(appState: appState)
+                        }
                     }) {
                         Image(systemName: "plus")
                             .padding(6)
                     }
                     .buttonStyle(.plain)
-                    .padding(.trailing, 12)
+                    .padding(.trailing, 11)
                 }
                 
                 if appState.settings.peers.isEmpty {
@@ -168,27 +204,92 @@ struct MenuView: View {
             }
             
             // Settings and Quit
-            SettingsLink {
+            Button(action: { openSettingsAndBringToFront() }) {
                 Label("Settings…", systemImage: "gearshape")
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .simultaneousGesture(TapGesture().onEnded {
-                NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
-                NSApp.activate(ignoringOtherApps: true)
-            })
             .buttonStyle(.plain)
+            .background(isHoveringSettingsRow ? hoverBackground : Color.clear)
+            .cornerRadius(8)
+            .padding(.horizontal, 6)
+            .padding(.top, 4)
+            .onHover { hovering in
+                isHoveringSettingsRow = hovering
+            }
             
             Button(action: {
                 NSApplication.shared.terminate(nil)
             }) {
                 Label("Quit", systemImage: "power")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+            .background(isHoveringQuitRow ? hoverBackground : Color.clear)
+            .cornerRadius(8)
+            .padding(.horizontal, 6)
+            .padding(.bottom, 6)
+            .onHover { hovering in
+                isHoveringQuitRow = hovering
+            }
         }
         .frame(width: 280)
+    }
+    
+    private var hoverBackground: Color {
+        Color(nsColor: NSColor.selectedContentBackgroundColor).opacity(0.35)
+    }
+    
+    private func collapseMenu() {
+        // MenuBarExtra(.window) doesn't reliably respond to NSMenu.cancelTracking.
+        // We dismiss by ordering out the status-level window on the next runloop tick.
+        DispatchQueue.main.async {
+            NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+
+            let statusBarLevel = NSWindow.Level.statusBar.rawValue
+            for window in NSApplication.shared.windows where window.isVisible {
+                if window.level.rawValue >= statusBarLevel {
+                    window.orderOut(nil)
+                    window.performClose(nil)
+                }
+            }
+
+            NSApp.keyWindow?.orderOut(nil)
+            NSApp.keyWindow?.performClose(nil)
+        }
+    }
+    
+    private func copyMyUserIdToClipboard() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(appState.settings.myUserId, forType: .string)
+        
+        didCopyMyId = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            didCopyMyId = false
+        }
+    }
+    
+    private func openSettingsAndBringToFront() {
+        collapseMenu()
+        NSApp.activate(ignoringOtherApps: true)
+        
+        // Let the menu collapse first, then open Settings.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            openSettings()
+            
+            // Ensure the Settings window is brought to the front (it can sometimes appear behind other windows).
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                for window in NSApplication.shared.windows {
+                    if window.title == "Settings" || window.title.contains("Settings") || window.title.contains("Preferences") {
+                        window.makeKeyAndOrderFront(nil)
+                        window.orderFrontRegardless()
+                    }
+                }
+            }
+        }
     }
         
     private func statusColor(for state: PresenceState) -> Color {
@@ -204,6 +305,7 @@ struct PeerRow: View {
     let peer: Peer
     @ObservedObject var appState: AppState
     @State private var showActions = false
+    @State private var isHovering = false
     
     private func formatTimestamp(_ timestamp: Int64) -> String {
         // Important: this UI is not re-rendered every second (poll interval is ~30s),
@@ -253,11 +355,16 @@ struct PeerRow: View {
         addItem("FaceTime Audio", systemImage: "phone") { openFaceTimeAudio(handle: peer.handle) }
         menu.addItem(.separator())
         addItem("Edit Contact", systemImage: "pencil") {
-            NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
-            EditContactWindowController.shared.present(appState: appState, peer: peer)
+            collapseMenuThen {
+                EditContactWindowController.shared.present(appState: appState, peer: peer)
+            }
         }
         menu.addItem(.separator())
-        addItem("Remove", systemImage: "trash") { appState.removePeer(peer.peerUserId) }
+        addItem("Remove", systemImage: "trash") {
+            collapseMenuThen {
+                appState.removePeer(peer.peerUserId)
+            }
+        }
 
         // Keep handlers alive for the duration of the menu.
         objc_setAssociatedObject(menu, Unmanaged.passUnretained(menu).toOpaque(), handlers, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
@@ -327,9 +434,15 @@ struct PeerRow: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+            .background(isHovering ? Color(nsColor: NSColor.selectedContentBackgroundColor).opacity(0.35) : Color.clear)
+            .cornerRadius(8)
+            .padding(.horizontal, 6)
         }
         .contentShape(Rectangle())
         .onTapGesture { showContactMenu() }
+        .onHover { hovering in
+            isHovering = hovering
+        }
         .help(peer.lastKnownPresence != nil ? "Local time: \(formatLocalTime(peer.lastKnownPresence!.timestamp))" : "")
     }
     
@@ -344,25 +457,49 @@ struct PeerRow: View {
     private func openMessage(handle: String) {
         let h = normalizeHandle(handle)
         guard !h.isEmpty else { return }
-        if let url = URL(string: "sms:\(h)") {
-            NSWorkspace.shared.open(url)
+        collapseMenuThen {
+            if let url = URL(string: "sms:\(h)") {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
     
     private func openFaceTime(handle: String) {
         let h = normalizeHandle(handle)
         guard !h.isEmpty else { return }
-        if let url = URL(string: "facetime://\(h)") {
-            NSWorkspace.shared.open(url)
+        collapseMenuThen {
+            if let url = URL(string: "facetime://\(h)") {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
     
     private func openFaceTimeAudio(handle: String) {
         let h = normalizeHandle(handle)
         guard !h.isEmpty else { return }
-        if let url = URL(string: "facetime-audio://\(h)") {
-            NSWorkspace.shared.open(url)
+        collapseMenuThen {
+            if let url = URL(string: "facetime-audio://\(h)") {
+                NSWorkspace.shared.open(url)
+            }
         }
+    }
+    
+    private func collapseMenuThen(_ action: @escaping () -> Void) {
+        DispatchQueue.main.async {
+            // Dismiss the MenuBarExtra window before launching external apps / panels.
+            let statusBarLevel = NSWindow.Level.statusBar.rawValue
+            for window in NSApplication.shared.windows where window.isVisible {
+                if window.level.rawValue >= statusBarLevel {
+                    window.orderOut(nil)
+                    window.performClose(nil)
+                }
+            }
+            NSApp.sendAction(#selector(NSMenu.cancelTracking), to: nil, from: nil)
+            NSApp.keyWindow?.orderOut(nil)
+            NSApp.keyWindow?.performClose(nil)
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { action() }
     }
 }
 
@@ -379,6 +516,7 @@ struct RequestRow: View {
             
             HStack {
                 Button(action: {
+                    NSApp.keyWindow?.orderOut(nil)
                     Task {
                         await appState.respondToRequest(request, decision: "allow")
                     }
@@ -389,6 +527,7 @@ struct RequestRow: View {
                 .buttonStyle(.borderedProminent)
                 
                 Button(action: {
+                    NSApp.keyWindow?.orderOut(nil)
                     Task {
                         await appState.respondToRequest(request, decision: "deny")
                     }

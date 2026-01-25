@@ -24,7 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		6AE96A3D2F16F2BE00A6189C /* status sync app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "status sync app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AE96A3D2F16F2BE00A6189C /* Status Sync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Status Sync.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AE96A4A2F16F2BF00A6189C /* status sync appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "status sync appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AE96A542F16F2BF00A6189C /* status sync appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "status sync appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -85,7 +85,7 @@
 		6AE96A3E2F16F2BE00A6189C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6AE96A3D2F16F2BE00A6189C /* status sync app.app */,
+				6AE96A3D2F16F2BE00A6189C /* Status Sync.app */,
 				6AE96A4A2F16F2BF00A6189C /* status sync appTests.xctest */,
 				6AE96A542F16F2BF00A6189C /* status sync appUITests.xctest */,
 			);
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		6AE96A3C2F16F2BE00A6189C /* status sync app */ = {
+		6AE96A3C2F16F2BE00A6189C /* Status Sync */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6AE96A5E2F16F2BF00A6189C /* Build configuration list for PBXNativeTarget "status sync app" */;
+			buildConfigurationList = 6AE96A5E2F16F2BF00A6189C /* Build configuration list for PBXNativeTarget "Status Sync" */;
 			buildPhases = (
 				6AE96A392F16F2BE00A6189C /* Sources */,
 				6AE96A3A2F16F2BE00A6189C /* Frameworks */,
@@ -110,11 +110,11 @@
 			fileSystemSynchronizedGroups = (
 				6AE96A3F2F16F2BE00A6189C /* status sync app */,
 			);
-			name = "status sync app";
+			name = "Status Sync";
 			packageProductDependencies = (
 			);
 			productName = "status sync app";
-			productReference = 6AE96A3D2F16F2BE00A6189C /* status sync app.app */;
+			productReference = 6AE96A3D2F16F2BE00A6189C /* Status Sync.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6AE96A492F16F2BF00A6189C /* status sync appTests */ = {
@@ -200,7 +200,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6AE96A3C2F16F2BE00A6189C /* status sync app */,
+				6AE96A3C2F16F2BE00A6189C /* Status Sync */,
 				6AE96A492F16F2BF00A6189C /* status sync appTests */,
 				6AE96A532F16F2BF00A6189C /* status sync appUITests */,
 			);
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		6AE96A4C2F16F2BF00A6189C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6AE96A3C2F16F2BE00A6189C /* status sync app */;
+			target = 6AE96A3C2F16F2BE00A6189C /* Status Sync */;
 			targetProxy = 6AE96A4B2F16F2BF00A6189C /* PBXContainerItemProxy */;
 		};
 		6AE96A562F16F2BF00A6189C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6AE96A3C2F16F2BE00A6189C /* status sync app */;
+			target = 6AE96A3C2F16F2BE00A6189C /* Status Sync */;
 			targetProxy = 6AE96A552F16F2BF00A6189C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -415,7 +415,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Status Sync App";
+				INFOPLIST_KEY_CFBundleDisplayName = "Status Sync";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -461,7 +461,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Status Sync App";
+				INFOPLIST_KEY_CFBundleDisplayName = "Status Sync";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -573,7 +573,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6AE96A5E2F16F2BF00A6189C /* Build configuration list for PBXNativeTarget "status sync app" */ = {
+		6AE96A5E2F16F2BF00A6189C /* Build configuration list for PBXNativeTarget "Status Sync" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6AE96A5F2F16F2BF00A6189C /* Debug */,
